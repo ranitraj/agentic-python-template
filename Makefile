@@ -2,7 +2,7 @@
 
 ## First-time setup: run the interactive project initialiser
 setup:
-	python init.py
+	python3 init.py
 
 ## Bootstrap: install root dev deps + all services + git hooks
 init: install precommit-install

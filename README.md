@@ -65,7 +65,7 @@ cd <your-project>
 ### 2. Run the setup wizard
 
 ```bash
-python init.py
+python3 init.py
 ```
 
 See the [full wizard walkthrough](#wizard-walkthrough) for an example of every prompt and what to enter.
@@ -92,7 +92,7 @@ From now on, `cd`-ing into a service directory activates its venv. No manual `so
 
 ## Wizard walkthrough
 
-A complete example run of `python init.py` for a simple calculator project:
+A complete example run of `python3 init.py` for a simple calculator project:
 
 ```
 Agentic Python Project Initialiser
