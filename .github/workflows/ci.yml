@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+
+      - name: Install root dev dependencies
+        run: uv sync --group dev
+
+      - name: Run pre-commit hooks
+        run: uv run pre-commit run --all-files
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ["{{service-name}}"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: services/${{ matrix.service }}/.python-version
+
+      - name: Install service dependencies
+        working-directory: services/${{ matrix.service }}
+        run: uv sync --group dev
+
+      - name: Run tests
+        working-directory: services/${{ matrix.service }}
+        run: uv run pytest tests/ -v
