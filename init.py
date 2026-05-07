@@ -99,6 +99,7 @@ def main() -> None:
     if not protect_main:
         _remove_branch_protection(ROOT)
 
+    _reset_readme(ROOT, project_name, description, service_name)
     _git_init_commit(ROOT, project_name)
     Path(__file__).unlink()
 
@@ -335,6 +336,37 @@ def _remove_branch_protection(root: Path) -> None:
     lines = pre_commit.read_text(encoding="utf-8").splitlines()
     filtered = [ln for ln in lines if "no-commit-to-branch" not in ln and "--branch=main" not in ln]
     pre_commit.write_text("\n".join(filtered) + "\n", encoding="utf-8")
+
+
+def _reset_readme(root: Path, project_name: str, description: str, service_name: str) -> None:
+    """Overwrite README.md with a minimal project-specific file.
+
+    The template's README describes the template itself and is not useful
+    after initialisation. This replaces it with a project stub the user
+    can extend.
+
+    Parameters
+    ----------
+    root : Path
+        Project root.
+    project_name : str
+        Kebab-case project name, used as the Markdown heading.
+    description : str
+        One-line project description.
+    service_name : str
+        Kebab-case service name, used in the setup steps.
+    """
+    content = (
+        f"# {project_name}\n\n"
+        f"{description}\n\n"
+        "## Setup\n\n"
+        "```bash\n"
+        "make init\n"
+        "direnv allow .\n"
+        f"cd services/{service_name} && direnv allow .\n"
+        "```\n"
+    )
+    (root / "README.md").write_text(content, encoding="utf-8")
 
 
 def _git_init_commit(root: Path, project_name: str) -> None:
