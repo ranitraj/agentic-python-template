@@ -142,7 +142,7 @@ Initialising...
 
   Next steps:
     cd services/calculator && uv sync --group dev
-    make precommit-install
+    make init
     direnv allow .
 ```
 
