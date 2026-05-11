@@ -18,11 +18,12 @@ Document Driven Design, and a one-shot setup wizard.
 | Venv auto-activation | [direnv](https://direnv.net/) — `cd` into a service, venv activates automatically |
 | Linting & formatting | ruff (E, F, I, B, UP, RUF rules) |
 | Type checking | mypy strict mode |
-| Code quality | pylint (min score 10, McCabe complexity) |
+| Code quality | pylint (min score 10, McCabe complexity, duplicate-code detection) |
 | Pre-commit hooks | All of the above + TDD enforcement + branch protection |
 | CI | GitHub Actions — quality gate + per-service test matrix |
 | Design workflow | Document Driven Design (DDD) with design & solution doc templates |
-| AI conventions | `CLAUDE.md` — NumPy docstrings, RED/GREEN TDD, SOLID, code review pace |
+| AI conventions | `CLAUDE.md` + `.claude/{DDD,TDD}.md` — NumPy docstrings, RED/GREEN TDD, DDD workflow, SOLID |
+| AI guardrails | Claude Code hooks — reuse reminder before edits + auto-`/simplify` on stop |
 | Setup wizard | `init.py` — interactive, replaces all placeholders, self-deletes |
 
 ---
@@ -172,8 +173,14 @@ your-project/
 │       └── src/<module>/
 │
 └── .claude/
+    ├── DDD.md                       # DDD workflow rules (referenced from CLAUDE.md)
+    ├── TDD.md                       # TDD workflow rules (referenced from CLAUDE.md)
+    ├── settings.json                # Claude Code hooks config
+    ├── hooks/                       # Hook scripts: pre-edit reuse + stop /simplify
     ├── designs/_template.md         # Design doc template (fill before coding)
-    └── solutions/_template.md       # Solution doc template (fill after shipping)
+    └── solutions/
+        ├── README.md                # Solution-doc workflow
+        └── _template.md             # Solution doc template (fill after shipping)
 ```
 
 ---
@@ -211,6 +218,19 @@ Reserve this for genuinely data-only files. Any module with logic — even a one
 You don't do anything. The moment Claude marks a design doc `status: done`, it automatically
 creates `.claude/solutions/<topic>.md` — filling in what was built, decisions made, and what to
 watch for next time. You review, it saves.
+
+---
+
+## AI guardrails
+
+LLMs drift over long sessions — duplicate logic, mismatched parameter names, missed reuse. The template ships with two Claude Code hooks (`.claude/settings.json` + `.claude/hooks/`) that mechanically counter this:
+
+1. **Reuse reminder before edits** — `PreToolUse` on `Edit`/`Write`/`MultiEdit` injects a one-line reminder: *grep for an existing utility first, match parameter names of nearby functions, refactor rather than duplicate.*
+2. **Auto-`/simplify` on stop** — when Claude tries to stop with uncommitted changes, the `Stop` hook nudges it to run `/simplify` first (an end-of-turn diff review for duplication, missed reuse, inconsistent params). A per-session marker prevents looping after `/simplify`'s own edits.
+
+Deterministic backup at commit time: `pylint`'s similarities check (configured in `pyproject.toml`) flags 6+ identical lines across files — ignoring imports, signatures, comments, docstrings — so logic duplication can't slip past `pre-commit`.
+
+To disable any of these: edit `.claude/settings.json` (hooks) or `[tool.pylint.similarities]` in `pyproject.toml` (duplicate check).
 
 ---
 
