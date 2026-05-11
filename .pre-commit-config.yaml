@@ -49,6 +49,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: true
+        exclude: ^services/
 
   - repo: local
     hooks:
@@ -57,6 +58,27 @@ repos:
         entry: uv run pylint -j 0 --fail-under=10
         language: system
         types: [python]
+        exclude: ^services/
+
+  - repo: local
+    hooks:
+      - id: mypy-services
+        name: mypy (services)
+        entry: uv run python scripts/lint_service.py mypy
+        language: system
+        types: [python]
+        files: ^services/
+        pass_filenames: true
+
+  - repo: local
+    hooks:
+      - id: pylint-services
+        name: pylint (services)
+        entry: uv run python scripts/lint_service.py pylint
+        language: system
+        types: [python]
+        files: ^services/
+        pass_filenames: true
 
   - repo: local
     hooks:

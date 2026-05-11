@@ -198,6 +198,14 @@ Refactor  →  keep tests green
 
 The `enforce-tdd` pre-commit hook blocks committing a `src/` file if no matching `tests/test_<module>.py` exists.
 
+**Exempting data-only files from TDD:** Some modules hold only constants or configuration and don't have behaviour worth testing (e.g. `constants.py`). Open `scripts/check_tdd.py` and add the filename to the `_no_test_required` set:
+
+```python
+_no_test_required = {"constants.py", "settings.py"}
+```
+
+Reserve this for genuinely data-only files. Any module with logic — even a one-liner — should have a test.
+
 ### After you ship: Solution docs
 
 You don't do anything. The moment Claude marks a design doc `status: done`, it automatically
@@ -215,6 +223,10 @@ cp -r _service-template services/<new-service>
 # add "<new-service>" to the matrix in .github/workflows/ci.yml
 cd services/<new-service> && direnv allow .
 ```
+
+**Lint and type checks auto-discover the new service.** `scripts/lint_service.py` is invoked by the `mypy-services` and `pylint-services` pre-commit hooks: it groups staged files by their service root and runs mypy/pylint inside each affected service's own venv via `uv run --directory`. No `.pre-commit-config.yaml` edits needed when adding a service.
+
+If the service venv is missing, the hook prints an explicit `make init` instruction. If your service uses pydantic, add `plugins = ["pydantic.mypy"]` to its `[tool.mypy]` config.
 
 ---
 
@@ -240,9 +252,11 @@ task. If it skips this:
    Start a new session with `/clear` to reload `CLAUDE.md` from scratch.
 2. **Re-anchor** — Say: *"Check CLAUDE.md's DDD rules and follow them before continuing."*
 
-### Claude starts implementing without the 3 rounds of questions
+### Claude starts implementing without exploring the problem first
 
-Say: *"Stop. We haven't done the 3 rounds of follow-up questions yet. Start from round 1."*
+The DDD workflow is two-phase: open exploration until you have a clear direction, then exactly 3 targeted rounds (gaps, edge cases, constraints) before the design doc. If Claude jumps straight to code, say:
+
+*"Stop. We haven't done the two-phase questioning yet. Start with exploration."*
 
 ### Nothing works — Claude has lost context
 

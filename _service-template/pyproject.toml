@@ -24,3 +24,25 @@ packages = ["src/{{service-module}}"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+# ---------------------------------------------------------------------------
+# MyPy
+# Service-local mypy config. Add `plugins = ["pydantic.mypy"]` if this
+# service uses pydantic, and add other framework plugins as needed.
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "{{python-version}}"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+pretty = true
+show_error_codes = true
+
+# ---------------------------------------------------------------------------
+# Pylint
+# Line length is owned by ruff (configured at root). Disabling here avoids
+# tool-conflict noise — ruff is the single source of truth for formatting.
+# ---------------------------------------------------------------------------
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["line-too-long"]
