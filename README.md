@@ -21,7 +21,7 @@ Document Driven Design, and a one-shot setup wizard.
 | Code quality | pylint (min score 10, McCabe complexity, duplicate-code detection) |
 | Pre-commit hooks | All of the above + TDD enforcement + branch protection |
 | CI | GitHub Actions — quality gate + per-service test matrix |
-| Design workflow | Document Driven Design (DDD) with design & solution doc templates |
+| Design workflow | Document Driven Design (DDD) with design, solution, and ADR templates |
 | AI conventions | `CLAUDE.md` + `.claude/{DDD,TDD}.md` — NumPy docstrings, RED/GREEN TDD, DDD workflow, SOLID |
 | AI guardrails | Claude Code hooks — reuse reminder before edits + auto-`/simplify` on stop |
 | Setup wizard | `init.py` — interactive, replaces all placeholders, self-deletes |
@@ -178,6 +178,9 @@ your-project/
     ├── settings.json                # Claude Code hooks config
     ├── hooks/                       # Hook scripts: pre-edit reuse + stop /simplify
     ├── designs/_template.md         # Design doc template (fill before coding)
+    ├── decisions/                   # Architecture Decision Records (ADRs) — append-only
+    │   ├── README.md                # When and how to write an ADR
+    │   └── _adr_template.md         # ADR template
     └── solutions/
         ├── README.md                # Solution-doc workflow
         └── _template.md             # Solution doc template (fill after shipping)
@@ -215,7 +218,7 @@ Reserve this for genuinely data-only files. Any module with logic — even a one
 
 ### After you ship: Solution docs
 
-You don't do anything. The moment Claude marks a design doc `status: done`, it automatically
+You don't do anything. The moment Claude marks a design doc `status: shipped`, it automatically
 creates `.claude/solutions/<topic>.md` — filling in what was built, decisions made, and what to
 watch for next time. You review, it saves.
 

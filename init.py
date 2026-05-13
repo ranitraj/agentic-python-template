@@ -297,14 +297,18 @@ def _remove_tdd_hook(root: Path) -> None:
 
 
 def _remove_ddd(root: Path) -> None:
-    """Delete the .claude/designs and .claude/solutions directories.
+    """Delete the .claude/designs, .claude/solutions, and .claude/decisions directories.
 
     Parameters
     ----------
     root : Path
         Project root.
     """
-    for d in [root / ".claude" / "designs", root / ".claude" / "solutions"]:
+    for d in [
+        root / ".claude" / "designs",
+        root / ".claude" / "solutions",
+        root / ".claude" / "decisions",
+    ]:
         if d.exists():
             shutil.rmtree(d)
 
