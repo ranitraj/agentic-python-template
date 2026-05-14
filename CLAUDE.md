@@ -75,6 +75,12 @@ Readers see the interface before implementation details.
 
 ---
 
+## Code Review
+
+Before finalising a feature, run [`/review`](.claude/commands/review.md) — it spawns three parallel read-only agents (DRY, simplicity, docs-sync) that produce a ranked report. Agents are user-invoked, not hook-fired, so they don't burn tokens on every edit. See [.claude/agents/README.md](.claude/agents/README.md) for cost / when to upgrade the model / how to add an agent.
+
+---
+
 ## Development Workflow — TDD
 
 This template ships with TDD (RED → GREEN → REFACTOR) as the default workflow. Full rules — test quality, code review pace, real-world scenarios — live in [.claude/TDD.md](.claude/TDD.md). Adopters who don't follow TDD can replace this section.
