@@ -48,6 +48,10 @@ def main() -> None:
     pylint_score = _ask("Min pylint score", "10")
     line_length = _ask("Line length", "119")
     max_args = _ask("Max function args", "5")
+    docstring_style = _ask("Docstring style (numpy/google/skip)", "numpy").lower()
+    while docstring_style not in ("numpy", "google", "skip"):
+        print("  Please choose: numpy, google, or skip")
+        docstring_style = _ask("Docstring style (numpy/google/skip)", "numpy").lower()
 
     # ── Workflow ──────────────────────────────────────────────────────────
     print("\nWorkflow")
@@ -67,6 +71,7 @@ def main() -> None:
     print(f"  service      : {service_name}  (module: {service_module})")
     print(f"  strict mypy  : {strict_mypy}")
     print(f"  pylint score : {pylint_score}   line length: {line_length}   max args: {max_args}")
+    print(f"  docstrings   : {docstring_style}")
     print(f"  enforce TDD  : {enforce_tdd}")
     print(f"  DDD docs     : {use_ddd}")
     print(f"  protect main : {protect_main}")
@@ -98,6 +103,10 @@ def main() -> None:
         _remove_ci(ROOT)
     if not protect_main:
         _remove_branch_protection(ROOT)
+    if docstring_style == "google":
+        _set_docstring_convention(ROOT, "google")
+    elif docstring_style == "skip":
+        _remove_docstring_enforcement(ROOT)
 
     _reset_readme(ROOT, project_name, description, service_name)
     _git_init_commit(ROOT, project_name)
@@ -452,6 +461,121 @@ def _remove_branch_protection(root: Path) -> None:
     lines = pre_commit.read_text(encoding="utf-8").splitlines()
     filtered = [ln for ln in lines if "no-commit-to-branch" not in ln and "--branch=main" not in ln]
     pre_commit.write_text("\n".join(filtered) + "\n", encoding="utf-8")
+
+
+_NUMPY_DOCSTRING_BLOCK = '''### Function / method docstrings — NumPy style
+Every public function and method must have a NumPy-style docstring with all applicable sections:
+
+```python
+def fetch_entry(title: str) -> WikiEntry:
+    """Fetch a wiki entry by title.
+
+    Parameters
+    ----------
+    title : str
+        Exact title to retrieve.
+
+    Returns
+    -------
+    WikiEntry
+        The retrieved entry.
+
+    Raises
+    ------
+    EntryNotFoundError
+        If `title` does not exist.
+    """
+```
+
+Rules:
+- One-line summary, imperative mood ("Fetch", "Update", "Run").
+- Include `Parameters` / `Returns` / `Raises` only when they apply (omit `Returns` for `None`-returners, etc.).
+- Private helpers (`_prefixed`) follow the same rules as public functions.'''
+
+
+_GOOGLE_DOCSTRING_BLOCK = '''### Function / method docstrings — Google style
+Every public function and method must have a Google-style docstring with all applicable sections:
+
+```python
+def fetch_entry(title: str) -> WikiEntry:
+    """Fetch a wiki entry by title.
+
+    Args:
+        title: Exact title to retrieve.
+
+    Returns:
+        The retrieved entry.
+
+    Raises:
+        EntryNotFoundError: If `title` does not exist.
+    """
+```
+
+Rules:
+- One-line summary, imperative mood ("Fetch", "Update", "Run").
+- Include `Args` / `Returns` / `Raises` only when they apply (omit `Returns` for `None`-returners, etc.).
+- Private helpers (`_prefixed`) follow the same rules as public functions.'''
+
+
+def _set_docstring_convention(root: Path, convention: str) -> None:
+    """Swap ruff's pydocstyle convention and the CLAUDE.md docstring example.
+
+    Parameters
+    ----------
+    root : Path
+        Project root.
+    convention : str
+        Target convention, currently only ``"google"`` is supported by the wizard
+        (the default ``"numpy"`` is what the template ships with, so no swap is needed).
+    """
+    pyproject = root / "pyproject.toml"
+    if pyproject.exists():
+        text = pyproject.read_text(encoding="utf-8")
+        text = text.replace('convention = "numpy"', f'convention = "{convention}"')
+        pyproject.write_text(text, encoding="utf-8")
+
+    if convention == "google":
+        claude_md = root / "CLAUDE.md"
+        if claude_md.exists():
+            text = claude_md.read_text(encoding="utf-8")
+            text = text.replace(_NUMPY_DOCSTRING_BLOCK, _GOOGLE_DOCSTRING_BLOCK)
+            claude_md.write_text(text, encoding="utf-8")
+
+
+def _remove_docstring_enforcement(root: Path) -> None:
+    """Disable ruff D rules and remove the docstring-style guidance from CLAUDE.md.
+
+    Removes the ``D`` entry from ``select``, deletes the ``[tool.ruff.lint.pydocstyle]``
+    and template-shipped ``[tool.ruff.lint.per-file-ignores]`` sections from
+    ``pyproject.toml``, and strips the entire "Docstring & Comment Conventions"
+    section from CLAUDE.md.
+
+    Parameters
+    ----------
+    root : Path
+        Project root.
+    """
+    pyproject = root / "pyproject.toml"
+    if pyproject.exists():
+        text = pyproject.read_text(encoding="utf-8")
+        # Drop "D" from the select list (it's always last in the template).
+        text = re.sub(r',\s*"D"(?=\s*\])', "", text)
+        # Drop the pydocstyle config block (single-line comment + section + value).
+        text = re.sub(
+            r"\n# Docstring style: .*?\n\[tool\.ruff\.lint\.pydocstyle\]\nconvention = \"[^\"]+\"\n",
+            "",
+            text,
+        )
+        # Drop the per-file-ignores block (D-specific, shipped by the template).
+        text = re.sub(
+            r"\n\[tool\.ruff\.lint\.per-file-ignores\]\n\"__init__\.py\".*?\n\"tests/\*\*\".*?\n",
+            "",
+            text,
+        )
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        pyproject.write_text(text, encoding="utf-8")
+
+    _strip_claude_md_section(root, "## Docstring & Comment Conventions")
 
 
 def _reset_readme(root: Path, project_name: str, description: str, service_name: str) -> None:

@@ -11,9 +11,9 @@ Initial stable release.
 
 ### Highlights
 
-- One-shot setup wizard (`init.py`) with workflow toggles for TDD, DDD, branch protection, and GitHub Actions.
+- One-shot setup wizard (`init.py`) with workflow toggles for TDD, DDD, branch protection, GitHub Actions, and docstring style (numpy / google / skip).
 - UV-based per-service virtualenvs with direnv auto-activation.
-- Strict pre-commit: ruff, mypy strict, pylint (with duplicate-code detection via `[tool.pylint.similarities]`).
+- Strict pre-commit: ruff (with `D` pydocstyle rules + NumPy convention by default), mypy strict, pylint (with duplicate-code detection via `[tool.pylint.similarities]`).
 - Document Driven Design (DDD) with a 5-state design-doc lifecycle, solution docs, and append-only ADRs.
 - Three layers of AI guardrails for Claude Code:
   - Hooks (mechanical, always-on): pre-edit reuse reminder, stop-time `/simplify` nudge, periodic review prompt.
