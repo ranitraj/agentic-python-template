@@ -272,8 +272,101 @@ def _create_service(root: Path, service_name: str, service_module: str) -> None:
         placeholder_pkg.rename(service_dir / "src" / service_module)
 
 
+def _strip_claude_md_section(root: Path, heading: str) -> None:
+    """Strip a section (and its trailing separator) from CLAUDE.md.
+
+    Matches from the exact heading line through to just before the next
+    ``## `` heading (or end of file). Collapses runs of blank lines and
+    adjacent ``---`` separators left behind by the removal.
+
+    Parameters
+    ----------
+    root : Path
+        Project root.
+    heading : str
+        Section heading line, e.g. ``"## Document Driven Design (DDD)"``.
+    """
+    claude_md = root / "CLAUDE.md"
+    if not claude_md.exists():
+        return
+    text = claude_md.read_text(encoding="utf-8")
+    pattern = re.escape(heading) + r".*?(?=\n## |\Z)"
+    text = re.sub(pattern, "", text, count=1, flags=re.DOTALL)
+    text = re.sub(r"\n---\n\s*\n---\n", "\n---\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    claude_md.write_text(text.rstrip() + "\n", encoding="utf-8")
+
+
+def _remove_docs_sync(root: Path) -> None:
+    """Remove the docs-sync agent and strip references to it from /review and the agents README.
+
+    Called from :func:`_remove_ddd` because docs-sync only inspects the DDD
+    directories that have just been deleted.
+
+    Parameters
+    ----------
+    root : Path
+        Project root.
+    """
+    docs_sync = root / ".claude" / "agents" / "docs-sync.md"
+    if docs_sync.exists():
+        docs_sync.unlink()
+
+    review_cmd = root / ".claude" / "commands" / "review.md"
+    if review_cmd.exists():
+        text = review_cmd.read_text(encoding="utf-8")
+        # The whole orchestrator-level preflight existed only to gate docs-sync
+        text = re.sub(
+            r"## Preflight — decide which agents to launch.*?(?=\n## )",
+            "",
+            text,
+            flags=re.DOTALL,
+        )
+        # Table row + verdict bullet
+        text = re.sub(r"\| `docs-sync` \|.*?\n", "", text)
+        text = re.sub(r"- Docs-sync:.*?\n", "", text)
+        # Frontmatter description references docs-sync by name + counts agents
+        text = text.replace(
+            "Run three parallel read-only review agents (DRY, simplicity, docs-sync)",
+            "Run two parallel read-only review agents (DRY, simplicity)",
+        )
+        text = text.replace("Three specialist", "Two specialist")
+        # Collapse blank-line runs left by the preflight removal
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        review_cmd.write_text(text, encoding="utf-8")
+
+    agents_readme = root / ".claude" / "agents" / "README.md"
+    if agents_readme.exists():
+        text = agents_readme.read_text(encoding="utf-8")
+        text = re.sub(r"\| \[docs-sync\].*?\n", "", text)
+        text = text.replace("three Haiku invocations", "two Haiku invocations")
+        agents_readme.write_text(text, encoding="utf-8")
+
+    # CLAUDE.md's "Code Review" section names docs-sync as one of three agents
+    claude_md = root / "CLAUDE.md"
+    if claude_md.exists():
+        text = claude_md.read_text(encoding="utf-8")
+        text = text.replace(
+            "three parallel read-only agents (DRY, simplicity, docs-sync)",
+            "two parallel read-only agents (DRY, simplicity)",
+        )
+        claude_md.write_text(text, encoding="utf-8")
+
+    # README.md's AI guardrails Layer 3 lists docs-sync; "Useful commands" mentions it too
+    readme = root / "README.md"
+    if readme.exists():
+        text = readme.read_text(encoding="utf-8")
+        text = re.sub(r"- \*\*docs-sync\*\* — .*?\n", "", text)
+        text = text.replace("Three agents run in parallel", "Two agents run in parallel")
+        text = text.replace(
+            "spawn DRY + simplicity + docs-sync agents",
+            "spawn DRY + simplicity agents",
+        )
+        readme.write_text(text, encoding="utf-8")
+
+
 def _remove_tdd_hook(root: Path) -> None:
-    """Remove the enforce-tdd pre-commit hook and its script.
+    """Remove the enforce-tdd hook, its script, the TDD CLAUDE.md section, and ``.claude/TDD.md``.
 
     Parameters
     ----------
@@ -281,23 +374,32 @@ def _remove_tdd_hook(root: Path) -> None:
         Project root.
     """
     pre_commit = root / ".pre-commit-config.yaml"
-    if not pre_commit.exists():
-        return
-    text = pre_commit.read_text(encoding="utf-8")
-    text = re.sub(
-        r"\n\s*- id: enforce-tdd.*?pass_filenames: true",
-        "",
-        text,
-        flags=re.DOTALL,
-    )
-    pre_commit.write_text(text, encoding="utf-8")
+    if pre_commit.exists():
+        text = pre_commit.read_text(encoding="utf-8")
+        text = re.sub(
+            r"\n\s*- id: enforce-tdd.*?pass_filenames: true",
+            "",
+            text,
+            flags=re.DOTALL,
+        )
+        pre_commit.write_text(text, encoding="utf-8")
     tdd_script = root / "scripts" / "check_tdd.py"
     if tdd_script.exists():
         tdd_script.unlink()
+    _strip_claude_md_section(root, "## Development Workflow — TDD")
+    tdd_md = root / ".claude" / "TDD.md"
+    if tdd_md.exists():
+        tdd_md.unlink()
 
 
 def _remove_ddd(root: Path) -> None:
-    """Delete the .claude/designs, .claude/solutions, and .claude/decisions directories.
+    """Remove all DDD artifacts: directories, docs-sync agent, CLAUDE.md sections, detail file.
+
+    Specifically:
+    - Deletes ``.claude/{designs,solutions,decisions}/``.
+    - Calls :func:`_remove_docs_sync` because that agent only inspects the deleted dirs.
+    - Strips the DDD / Solution Docs / ADR sections from CLAUDE.md.
+    - Deletes ``.claude/DDD.md`` (referenced from the now-removed CLAUDE.md section).
 
     Parameters
     ----------
@@ -311,6 +413,16 @@ def _remove_ddd(root: Path) -> None:
     ]:
         if d.exists():
             shutil.rmtree(d)
+    _remove_docs_sync(root)
+    for heading in [
+        "## Document Driven Design (DDD)",
+        "## Solution Docs",
+        "## Architecture Decision Records",
+    ]:
+        _strip_claude_md_section(root, heading)
+    ddd_md = root / ".claude" / "DDD.md"
+    if ddd_md.exists():
+        ddd_md.unlink()
 
 
 def _remove_ci(root: Path) -> None:
