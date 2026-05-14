@@ -1,5 +1,9 @@
 # agentic-python-template
 
+[![Release](https://img.shields.io/github/v/release/ranitraj/agentic-python-template)](https://github.com/ranitraj/agentic-python-template/releases)
+[![License](https://img.shields.io/github/license/ranitraj/agentic-python-template)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12+-blue)](https://www.python.org/)
+
 A Python project template that makes Claude Code follow engineering discipline.
 Design docs before code. Tests before implementation. Three layers of AI guardrails so the agent doesn't drift over long sessions.
 
