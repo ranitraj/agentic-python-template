@@ -1,12 +1,9 @@
 # agentic-python-template
 
-A Python project template for development with AI agents (Claude Code).
+A Python project template that makes Claude Code follow engineering discipline.
+Design docs before code. Tests before implementation. Three layers of AI guardrails so the agent doesn't drift over long sessions.
 
-Batteries included: UV + direnv per-service venvs, strict linting, TDD enforcement,
-Document Driven Design, and a one-shot setup wizard.
-
-> **Maintainer note:** After pushing, go to **Settings → General → check "Template repository"**
-> so the green "Use this template" button appears for visitors.
+**Opinionated, not prescriptive.** Workflow defaults (TDD, DDD, branch protection, CI) are opt-in at init time — decline any that don't fit your team.
 
 ---
 
@@ -19,271 +16,66 @@ Document Driven Design, and a one-shot setup wizard.
 | Linting & formatting | ruff (E, F, I, B, UP, RUF rules) |
 | Type checking | mypy strict mode |
 | Code quality | pylint (min score 10, McCabe complexity, duplicate-code detection) |
-| Pre-commit hooks | All of the above + TDD enforcement + branch protection |
-| CI | GitHub Actions — quality gate + per-service test matrix |
-| Design workflow | Document Driven Design (DDD) with design, solution, and ADR templates |
+| Pre-commit hooks | All of the above + optional TDD enforcement + optional branch protection |
+| CI *(optional)* | GitHub Actions — quality gate + per-service test matrix |
+| Design workflow *(optional)* | Document Driven Design (DDD) with design, solution, and ADR templates |
 | AI conventions | `CLAUDE.md` + `.claude/{DDD,TDD}.md` — NumPy docstrings, RED/GREEN TDD, DDD workflow, SOLID |
-| AI guardrails | Claude Code hooks — reuse reminder before edits + auto-`/simplify` on stop |
+| AI guardrails | 3 layers: hooks (mechanical), pylint similarities (deterministic), opt-in `/review` agents (semantic) |
 | Setup wizard | `init.py` — interactive, replaces all placeholders, self-deletes |
 
 ---
 
-## Prerequisites
+## Quickstart
 
-```bash
-brew install uv direnv python@3.12
-```
-
-Add direnv to your shell (once, globally):
-
-```bash
-# bash
-echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
-
-# zsh
-echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
-```
-
----
-
-## Using this template
-
-### 1. Create your project from this template
-
-1. Go to **[github.com/ranitraj/agentic-python-template](https://github.com/ranitraj/agentic-python-template)**
-2. Click the green **"Use this template"** button → **"Create a new repository"**
-3. Name your new repo, set visibility, click **"Create repository"**
-
-This creates a clean copy in your own GitHub account with no git history carried over.
-
-Clone your new repo:
-
-```bash
-git clone https://github.com/<you>/<your-project>.git
-cd <your-project>
-```
-
-### 2. Run the setup wizard
-
-```bash
-python3 init.py
-```
-
-See the [full wizard walkthrough](#wizard-walkthrough) for an example of every prompt and what to enter.
-
-The wizard asks five categories of questions, replaces all `{{placeholders}}` across every file, creates your first service, makes the initial git commit, and deletes itself.
-
-### 3. Install dependencies and git hooks
-
-```bash
-make init          # installs root dev deps + all service deps + git hooks
-direnv allow .     # approve the root .envrc (loads .env)
-```
-
-### 4. Set up your first service
-
-```bash
-cd services/<your-service>
-direnv allow .     # approve service .envrc — venv is created and activated automatically
-```
-
-From now on, `cd`-ing into a service directory activates its venv. No manual `source .venv/bin/activate`.
-
----
-
-## Wizard walkthrough
-
-A complete example run of `python3 init.py` for a simple calculator project:
-
-```
-Agentic Python Project Initialiser
-======================================
-Defaults shown in [brackets] — press Enter to accept.
-
-Project identity
-  Project name (kebab-case) [my-project]: my-calculator
-  One-line description [A Python project]: A calculator service with an AI-agent interface
-  Available Python versions: 3.12, 3.11, 3.10
-  Python version [3.12]:                          ← press Enter to accept 3.12
-
-First service
-  Service name (kebab-case) [api]: calculator     ← creates services/calculator/
-
-Code quality  (press Enter to accept defaults)
-  Strict mypy? [Y/n]:                             ← press Enter = yes
-  Min pylint score [10]:                          ← press Enter = 10
-  Line length [119]:                              ← press Enter = 119
-  Max function args [5]:                          ← press Enter = 5
-
-Workflow
-  Enforce TDD? (pre-commit blocks commit if test file missing) [Y/n]:
-  Use DDD design docs + solution docs? [Y/n]:
-  Protect main branch? (blocks direct commits to main) [Y/n]:
-
-CI/CD
-  Add GitHub Actions? [Y/n]:
-
-── Summary ──────────────────────────────────────────────
-  project      : my-calculator
-  description  : A calculator service with an AI-agent interface
-  python       : 3.12
-  service      : calculator  (module: calculator)
-  strict mypy  : True
-  pylint score : 10   line length: 119   max args: 5
-  enforce TDD  : True
-  DDD docs     : True
-  protect main : True
-  GitHub CI    : True
-
-  Looks good? Proceed? [Y/n]:                     ← press Enter to apply
-
-Initialising...
-
-  my-calculator is ready.
-
-  Next steps:
-    cd services/calculator && uv sync --group dev
-    make init
-    direnv allow .
-```
-
-**Tips:**
-- All questions default to the recommended value — press Enter to accept.
-- For `Service name`, use kebab-case (`calculator`, `wiki-agent`, `gateway`). The wizard derives the Python module name automatically (`wiki-agent` → `wiki_agent`).
-- `init.py` runs once and deletes itself. To start over, re-clone from the template.
-
----
-
-## Project structure
-
-```
-your-project/
-├── CLAUDE.md                        # AI agent conventions (auto-read by Claude Code)
-├── STRATEGY.md                      # Product direction — fill this in first
-├── pyproject.toml                   # Shared ruff / mypy / pylint config
-├── Makefile                         # make init | lint | clean | hooks-update
-├── .pre-commit-config.yaml          # ruff, mypy, pylint, TDD, branch protection
-├── .github/workflows/ci.yml         # Quality gate + per-service test matrix
-├── .envrc                           # Root direnv — loads .env
-│
-├── services/
-│   └── <your-service>/              # Created by init.py from _service-template/
-│       ├── .envrc                   # layout uv — auto-creates .venv on cd
-│       ├── pyproject.toml           # Service dependencies
-│       └── src/<module>/
-│
-└── .claude/
-    ├── DDD.md                       # DDD workflow rules (referenced from CLAUDE.md)
-    ├── TDD.md                       # TDD workflow rules (referenced from CLAUDE.md)
-    ├── settings.json                # Claude Code hooks config
-    ├── hooks/                       # Hook scripts: pre-edit reuse + stop /simplify
-    ├── designs/_template.md         # Design doc template (fill before coding)
-    ├── decisions/                   # Architecture Decision Records (ADRs) — append-only
-    │   ├── README.md                # When and how to write an ADR
-    │   └── _adr_template.md         # ADR template
-    └── solutions/
-        ├── README.md                # Solution-doc workflow
-        └── _template.md             # Solution doc template (fill after shipping)
-```
-
----
-
-## Development workflow
-
-This template enforces a specific workflow. `CLAUDE.md` is the full reference — summary below.
-
-### Before you code: Document Driven Design
-
-1. Copy `.claude/designs/_template.md` → `.claude/designs/<feature>.md`
-2. Fill in: purpose, public API, data flow, test scenarios, error cases, out of scope
-3. Get sign-off, then implement
-
-### While you code: RED / GREEN TDD
-
-```
-Write failing test  →  commit test (RED)
-Write implementation  →  commit impl (GREEN, pre-commit checks test file exists)
-Refactor  →  keep tests green
-```
-
-The `enforce-tdd` pre-commit hook blocks committing a `src/` file if no matching `tests/test_<module>.py` exists.
-
-**Exempting data-only files from TDD:** Some modules hold only constants or configuration and don't have behaviour worth testing (e.g. `constants.py`). Open `scripts/check_tdd.py` and add the filename to the `_no_test_required` set:
-
-```python
-_no_test_required = {"constants.py", "settings.py"}
-```
-
-Reserve this for genuinely data-only files. Any module with logic — even a one-liner — should have a test.
-
-### After you ship: Solution docs
-
-You don't do anything. The moment Claude marks a design doc `status: shipped`, it automatically
-creates `.claude/solutions/<topic>.md` — filling in what was built, decisions made, and what to
-watch for next time. You review, it saves.
+1. **Install prereqs:** `brew install uv direnv python@3.12`, then add `eval "$(direnv hook zsh)"` (or `bash`) to your shell rc once.
+2. **Use this template:** click the green button on GitHub → clone your new repo.
+3. **Run the wizard:** `python3 init.py` — five question categories: project identity, first service, code quality thresholds, **workflow toggles** (enforce TDD? use DDD? protect main? add GitHub Actions?), and final confirm. Decline any toggle your team doesn't use.
+4. **Bootstrap:** `make init && direnv allow .` — installs dev deps + git hooks, approves root direnv.
+5. **First service:** `cd services/<your-service> && direnv allow .` — venv auto-activates from now on.
 
 ---
 
 ## AI guardrails
 
-LLMs drift over long sessions — duplicate logic, mismatched parameter names, missed reuse. The template ships with two Claude Code hooks (`.claude/settings.json` + `.claude/hooks/`) that mechanically counter this:
+LLMs drift over long sessions — duplicate logic, mismatched parameter names, missed reuse, doc / code drift. The template ships **three complementary layers**, each tuned to a different cost / depth tradeoff. All three are removable later (see *To disable* below).
 
-1. **Reuse reminder before edits** — `PreToolUse` on `Edit`/`Write`/`MultiEdit` injects a one-line reminder: *grep for an existing utility first, match parameter names of nearby functions, refactor rather than duplicate.*
-2. **Auto-`/simplify` on stop** — when Claude tries to stop with uncommitted changes, the `Stop` hook nudges it to run `/simplify` first (an end-of-turn diff review for duplication, missed reuse, inconsistent params). A per-session marker prevents looping after `/simplify`'s own edits.
+### Layer 1 — Mechanical (always-on, near-zero cost)
 
-Deterministic backup at commit time: `pylint`'s similarities check (configured in `pyproject.toml`) flags 6+ identical lines across files — ignoring imports, signatures, comments, docstrings — so logic duplication can't slip past `pre-commit`.
+Claude Code hooks in [`.claude/hooks/`](.claude/hooks/), wired via [`.claude/settings.json`](.claude/settings.json):
 
-To disable any of these: edit `.claude/settings.json` (hooks) or `[tool.pylint.similarities]` in `pyproject.toml` (duplicate check).
+- **Reuse reminder before edits** — `PreToolUse` on `Edit`/`Write`/`MultiEdit` injects: *grep for an existing utility first, match parameter names of nearby functions, refactor rather than duplicate.*
+- **Auto-`/simplify` on stop** — when Claude tries to stop with uncommitted changes, blocks once-per-session and nudges to run `/simplify` first. A per-session marker prevents looping after `/simplify`'s own edits.
+
+### Layer 2 — Deterministic (commit-time, free)
+
+`pylint similarities` (configured in `pyproject.toml`) flags 6+ identical lines across files, ignoring imports/signatures/comments/docstrings — so logic duplication can't slip past `pre-commit`. The rest of [`.pre-commit-config.yaml`](.pre-commit-config.yaml) handles formatting, types, and TDD enforcement.
+
+### Layer 3 — Semantic (opt-in, ~$0.02 per invocation)
+
+Read-only specialist agents in [`.claude/agents/`](.claude/agents/), orchestrated by the [`/review`](.claude/commands/review.md) slash command. Three agents run in parallel and return a ranked report:
+
+- **dry-reviewer** — duplicate logic, parameter signature drift, missed reuse. Catches what `pylint similarities` can't: semantic duplication in different shapes.
+- **simplicity-reviewer** — YAGNI violations and the six over-production traps (`while-I'm-here`, `for-future-flexibility`, `defensive-coding`, `modernization`, `consistency`, `cleanup`).
+- **docs-sync** — design / solution / ADR / CLAUDE drift vs current code (the one rule we explicitly couldn't enforce mechanically).
+
+Invoke `/review` at the end of a feature, before a commit, or before a PR. They never fire automatically — see [.claude/agents/README.md](.claude/agents/README.md) for cost, model selection, and how to add an agent.
+
+### To disable
+
+- **Hooks:** edit `.claude/settings.json` (or delete the file).
+- **Pylint similarities:** remove the `[tool.pylint.similarities]` section from `pyproject.toml`.
+- **Agents:** simply don't invoke `/review` — they're never auto-fired.
 
 ---
 
-## Adding a new service
+## Development workflow
 
-```bash
-cp -r _service-template services/<new-service>
-# rename src/service_module → src/<new_module>
-# update services/<new-service>/pyproject.toml name + packages
-# add "<new-service>" to the matrix in .github/workflows/ci.yml
-cd services/<new-service> && direnv allow .
-```
+These are template defaults — selected (or declined) during `python3 init.py`. Skip the ones your team doesn't use; the rest still work independently.
 
-**Lint and type checks auto-discover the new service.** `scripts/lint_service.py` is invoked by the `mypy-services` and `pylint-services` pre-commit hooks: it groups staged files by their service root and runs mypy/pylint inside each affected service's own venv via `uv run --directory`. No `.pre-commit-config.yaml` edits needed when adding a service.
-
-If the service venv is missing, the hook prints an explicit `make init` instruction. If your service uses pydantic, add `plugins = ["pydantic.mypy"]` to its `[tool.mypy]` config.
-
----
-
-## Troubleshooting: Claude Code not following the plan
-
-### Claude is ignoring CLAUDE.md conventions
-
-`CLAUDE.md` is auto-read by Claude Code at the start of every session from the repo root.
-If Claude isn't following it:
-
-1. **Verify location** — `CLAUDE.md` must be at the repo root, not inside a subdirectory.
-2. **Start a new session** — `CLAUDE.md` is only loaded at session start. Open a fresh Claude Code
-   conversation so it reloads.
-3. **Re-anchor mid-session** — If Claude drifts during a long session, say:
-   *"Re-read CLAUDE.md and confirm the conventions before continuing."*
-
-### Claude is not reading the design doc automatically
-
-`CLAUDE.md` instructs Claude to proactively scan `.claude/designs/` before every implementation
-task. If it skips this:
-
-1. **Long session context** — On very long sessions Claude may lose track of earlier instructions.
-   Start a new session with `/clear` to reload `CLAUDE.md` from scratch.
-2. **Re-anchor** — Say: *"Check CLAUDE.md's DDD rules and follow them before continuing."*
-
-### Claude starts implementing without exploring the problem first
-
-The DDD workflow is two-phase: open exploration until you have a clear direction, then exactly 3 targeted rounds (gaps, edge cases, constraints) before the design doc. If Claude jumps straight to code, say:
-
-*"Stop. We haven't done the two-phase questioning yet. Start with exploration."*
-
-### Nothing works — Claude has lost context
-
-`/clear` in the Claude Code chat resets the conversation and forces a clean re-read of `CLAUDE.md`.
+- **Before code** *(if DDD enabled)* — copy `.claude/designs/_template.md`, fill it, get sign-off, then implement. Full rules: [.claude/DDD.md](.claude/DDD.md).
+- **While coding** *(if TDD enabled)* — RED → GREEN → REFACTOR. Pre-commit blocks a `src/` commit without a matching `tests/test_<module>.py`. Full rules: [.claude/TDD.md](.claude/TDD.md).
+- **After shipping** *(if DDD enabled)* — solution docs auto-generate when a design doc hits `status: shipped`. See [.claude/solutions/README.md](.claude/solutions/README.md).
+- **Non-obvious decisions** *(if DDD enabled)* — capture as ADRs in [.claude/decisions/](.claude/decisions/).
 
 ---
 
@@ -294,4 +86,51 @@ make init              # full bootstrap (install + git hooks)
 make lint              # run all pre-commit hooks on every file
 make hooks-update      # update pre-commit hooks to latest versions
 make clean             # remove __pycache__, .mypy_cache, .ruff_cache, .pytest_cache
+/review                # spawn DRY + simplicity + docs-sync agents on uncommitted changes
 ```
+
+---
+
+<details>
+<summary><strong>Adding a new service</strong></summary>
+
+```bash
+cp -r _service-template services/<new-service>
+# rename src/service_module → src/<new_module>
+# update services/<new-service>/pyproject.toml name + packages
+# add "<new-service>" to the matrix in .github/workflows/ci.yml
+cd services/<new-service> && direnv allow .
+```
+
+Lint and type checks auto-discover the new service. `scripts/lint_service.py` (invoked by the `mypy-services` and `pylint-services` pre-commit hooks) groups staged files by service root and runs mypy/pylint inside each service's own venv via `uv run --directory`. No `.pre-commit-config.yaml` edits needed.
+
+</details>
+
+<details>
+<summary><strong>Troubleshooting Claude Code</strong></summary>
+
+### Claude is ignoring CLAUDE.md conventions
+
+`CLAUDE.md` loads once at session start. If Claude isn't following it:
+
+1. Verify it's at the repo root, not a subdirectory.
+2. Start a new session — `CLAUDE.md` reloads.
+3. Re-anchor mid-session: *"Re-read CLAUDE.md and confirm the conventions before continuing."*
+
+### Claude is not reading the design doc automatically
+
+`CLAUDE.md` instructs Claude to scan `.claude/designs/` before each implementation task. If skipped, run `/clear` to reload, or re-anchor: *"Check CLAUDE.md's DDD rules and follow them before continuing."*
+
+### Claude jumps to code without exploring
+
+DDD is two-phase: open exploration, then 3 targeted rounds (gaps, edge cases, constraints). If Claude skips: *"Stop. We haven't done the two-phase questioning yet. Start with exploration."*
+
+### Hooks aren't firing
+
+The settings watcher only sees `.claude/settings.json` if it existed when the session started. Run `/hooks` once (opens the menu, reloads config) or restart the session.
+
+</details>
+
+---
+
+> **Maintainer note:** After pushing your template, go to **Settings → General → check "Template repository"** so the green "Use this template" button appears for visitors.
