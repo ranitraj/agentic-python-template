@@ -107,6 +107,7 @@ def main() -> None:
         _set_docstring_convention(ROOT, "google")
     elif docstring_style == "skip":
         _remove_docstring_enforcement(ROOT)
+    _clean_template_meta(ROOT)
 
     _reset_readme(ROOT, project_name, description, service_name)
     _git_init_commit(ROOT, project_name)
@@ -445,6 +446,26 @@ def _remove_ci(root: Path) -> None:
     gh = root / ".github"
     if gh.exists():
         shutil.rmtree(gh)
+
+
+def _clean_template_meta(root: Path) -> None:
+    """Remove GitHub issue and PR templates that reference template-specific surfaces.
+
+    The shipped templates ask about ``init.py`` flow, CLAUDE.md conventions, and
+    other template-meta scaffolding that an adopter's downstream project does
+    not have. Always runs, regardless of opt-out choices.
+
+    Parameters
+    ----------
+    root : Path
+        Project root.
+    """
+    issue_dir = root / ".github" / "ISSUE_TEMPLATE"
+    if issue_dir.exists():
+        shutil.rmtree(issue_dir)
+    pr_template = root / ".github" / "PULL_REQUEST_TEMPLATE.md"
+    if pr_template.exists():
+        pr_template.unlink()
 
 
 def _remove_branch_protection(root: Path) -> None:
