@@ -31,11 +31,47 @@ Design docs before code. Tests before implementation. Three layers of AI guardra
 
 ## Quickstart
 
-1. **Install prereqs:** `brew install uv direnv python@3.12`, then add `eval "$(direnv hook zsh)"` (or `bash`) to your shell rc once.
-2. **Use this template:** click the green button on GitHub → clone your new repo.
-3. **Run the wizard:** `python3 init.py` — five question categories: project identity, first service, code quality thresholds, **workflow toggles** (enforce TDD? use DDD? protect main? add GitHub Actions?), and final confirm. Decline any toggle your team doesn't use.
-4. **Bootstrap:** `make init && direnv allow .` — installs dev deps + git hooks, approves root direnv.
-5. **First service:** `cd services/<your-service> && direnv allow .` — venv auto-activates from now on.
+### 1. Install prerequisites (one-time)
+
+```bash
+brew install uv direnv python@3.12
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc   # or ~/.bashrc for bash
+```
+
+### 2. Create your project from the template
+
+Click **Use this template** on GitHub, then clone and enter your new repo:
+
+```bash
+git clone https://github.com/<you>/<your-project>.git
+cd <your-project>
+```
+
+### 3. Run the setup wizard
+
+```bash
+python3 init.py
+```
+
+Five question categories: project identity, first service, code quality thresholds, **workflow toggles** (TDD, DDD, branch protection, GitHub Actions), and final confirm. Decline any toggle your team doesn't use.
+
+### 4. Bootstrap dependencies and hooks
+
+```bash
+make init
+direnv allow .
+```
+
+Installs dev deps + git hooks and approves the root direnv.
+
+### 5. Set up your first service
+
+```bash
+cd services/<your-service>
+direnv allow .
+```
+
+The service venv auto-activates from now on. No manual `source .venv/bin/activate`.
 
 ---
 
