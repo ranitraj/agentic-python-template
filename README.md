@@ -1,13 +1,28 @@
-# agentic-python-template
+# moor
 
-[![Release](https://img.shields.io/github/v/release/ranitraj/agentic-python-template)](https://github.com/ranitraj/agentic-python-template/releases)
-[![License](https://img.shields.io/github/license/ranitraj/agentic-python-template)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/ranitraj/moor)](https://github.com/ranitraj/moor/releases)
+[![License](https://img.shields.io/github/license/ranitraj/moor)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue)](https://www.python.org/)
 
-A Python project template that makes Claude Code follow engineering discipline.
-Design docs before code. Tests before implementation. Three layers of AI guardrails so the agent doesn't drift over long sessions.
+> *moor (v.): to tie a boat so it can't drift in the current.*
 
-**Opinionated, not prescriptive.** Workflow defaults (TDD, DDD, branch protection, CI) are opt-in at init time — decline any that don't fit your team.
+A Python project template that does that for AI agents: keeps Claude Code anchored to engineering discipline over long sessions. Three layers of guardrails so the agent doesn't drift.
+
+**For multi-service AI agent projects** (an agent service + tool services + frontend, all in one repo). If you're building a single-service library or CLI, try [cookiecutter-pypackage](https://github.com/audreyfeldroy/cookiecutter-pypackage) or [hatch new](https://hatch.pypa.io/) instead.
+
+**Opinionated, not prescriptive.** Workflow defaults (TDD, DDD, branch protection, CI) are opt-in at init time; decline any that don't fit your team.
+
+---
+
+## Why moor exists
+
+LLMs drift over long sessions: duplicate logic, mismatched parameter names, missed reuse, design docs that go stale. Most templates have good Python tooling. This one adds **three layers of drift prevention** specifically for AI-agent workflows:
+
+- **Mechanical** (always-on): Claude Code hooks fire on every Edit to remind the agent to reuse existing utilities.
+- **Deterministic** (commit-time): pylint similarities flags semantic duplicate logic before it lands.
+- **Semantic** (opt-in): the `/review` slash command runs three read-only review agents in parallel.
+
+Plus all the standard Python tooling adopters expect (uv, ruff, mypy, pylint, pre-commit, CI).
 
 ---
 
@@ -15,17 +30,17 @@ Design docs before code. Tests before implementation. Three layers of AI guardra
 
 | Layer | Tool / Convention |
 |---|---|
+| AI guardrails | 3 layers: hooks (mechanical), pylint similarities (deterministic), opt-in `/review` agents (semantic) |
+| AI conventions | `CLAUDE.md` + `.claude/{DDD,TDD}.md` — NumPy docstrings, RED/GREEN TDD, DDD workflow, SOLID |
+| Design workflow *(optional)* | Document Driven Design (DDD) with design, solution, and ADR templates |
+| Setup wizard | `init.py` — interactive, replaces all placeholders, self-deletes |
+| Code quality | pylint (default score 9.5, McCabe complexity, duplicate-code detection) |
+| Pre-commit hooks | All of the above + optional TDD enforcement + optional branch protection |
+| Linting & formatting | ruff (E, F, I, B, UP, RUF, D rules — NumPy docstring convention by default) |
+| Type checking | mypy strict mode |
 | Dependency management | [uv](https://docs.astral.sh/uv/) — fast, per-service virtualenvs |
 | Venv auto-activation | [direnv](https://direnv.net/) — `cd` into a service, venv activates automatically |
-| Linting & formatting | ruff (E, F, I, B, UP, RUF rules) |
-| Type checking | mypy strict mode |
-| Code quality | pylint (min score 10, McCabe complexity, duplicate-code detection) |
-| Pre-commit hooks | All of the above + optional TDD enforcement + optional branch protection |
 | CI *(optional)* | GitHub Actions — quality gate + per-service test matrix |
-| Design workflow *(optional)* | Document Driven Design (DDD) with design, solution, and ADR templates |
-| AI conventions | `CLAUDE.md` + `.claude/{DDD,TDD}.md` — NumPy docstrings, RED/GREEN TDD, DDD workflow, SOLID |
-| AI guardrails | 3 layers: hooks (mechanical), pylint similarities (deterministic), opt-in `/review` agents (semantic) |
-| Setup wizard | `init.py` — interactive, replaces all placeholders, self-deletes |
 
 ---
 
@@ -135,14 +150,12 @@ make clean             # remove __pycache__, .mypy_cache, .ruff_cache, .pytest_c
 <summary><strong>Adding a new service</strong></summary>
 
 ```bash
-cp -r _service-template services/<new-service>
-# rename src/service_module → src/<new_module>
-# update services/<new-service>/pyproject.toml name + packages
-# add "<new-service>" to the matrix in .github/workflows/ci.yml
+scripts/new-service.sh <new-service>
+# Then add '<new-service>' to the matrix in .github/workflows/ci.yml
 cd services/<new-service> && direnv allow .
 ```
 
-Lint and type checks auto-discover the new service. `scripts/lint_service.py` (invoked by the `mypy-services` and `pylint-services` pre-commit hooks) groups staged files by service root and runs mypy/pylint inside each service's own venv via `uv run --directory`. No `.pre-commit-config.yaml` edits needed.
+The script copies `_service-template/`, renames the package directory, and substitutes service names in `pyproject.toml`, tests, and `.envrc`. Lint and type checks auto-discover the new service: `scripts/lint_service.py` (invoked by the `mypy-services` and `pylint-services` pre-commit hooks) groups staged files by service root and runs mypy/pylint inside each service's own venv via `uv run --directory`. No `.pre-commit-config.yaml` edits needed.
 
 </details>
 
