@@ -45,7 +45,7 @@ def main() -> None:
     # ── Code quality ──────────────────────────────────────────────────────
     print("\nCode quality  (press Enter to accept defaults)")
     strict_mypy = _ask_bool("Strict mypy?", default=True)
-    pylint_score = _ask("Min pylint score", "10")
+    pylint_score = _ask("Min pylint score (9.5 = trying hard, 10 = strict)", "9.5")
     line_length = _ask("Line length", "119")
     max_args = _ask("Max function args", "5")
     docstring_style = _ask("Docstring style (numpy/google/skip)", "numpy").lower()
