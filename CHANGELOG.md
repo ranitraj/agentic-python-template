@@ -5,7 +5,7 @@ All notable changes to this template will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-05-14
+## [1.0.0] - 2026-05-17
 
 Initial stable release.
 
@@ -29,6 +29,6 @@ Initial stable release.
 - `.claude/DDD.md` and `.claude/TDD.md` referenced from `CLAUDE.md`.
 - `.claude/solutions/README.md` and `.claude/decisions/README.md`.
 - `LICENSE` (Apache 2.0).
-- `init.py` opt-out compliance: when adopters decline TDD or DDD, the wizard now strips the corresponding sections from `CLAUDE.md`, removes orphan `.claude/{DDD,TDD}.md` files, and cleans up `docs-sync` references across the template.
+- `init.py` cleanup on init: always removes template-meta GitHub PR/issue templates; if adopters decline TDD or DDD, also strips the matching `CLAUDE.md` sections, deletes orphan `.claude/{DDD,TDD}.md` files, and removes `docs-sync` references across the template.
 
 [1.0.0]: https://github.com/ranitraj/agentic-python-template/releases/tag/v1.0.0
