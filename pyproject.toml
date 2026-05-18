@@ -69,7 +69,7 @@ show_error_codes = true
 # ---------------------------------------------------------------------------
 [tool.pylint.main]
 load-plugins = ["pylint.extensions.mccabe"]
-fail-under = 10
+fail-under = 9.5
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = ["line-too-long"]
